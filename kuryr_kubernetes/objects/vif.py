@@ -40,3 +40,22 @@ class VIFMacvlanNested(obj_osvif.VIFBase):
         # Name of the device to create
         'vif_name': obj_fields.StringField(),
     }
+
+
+@obj_base.VersionedObjectRegistry.register
+class VIFDpdk(obj_osvif.VIFBase):
+    # DPDK
+
+    VERSION = '1.0'
+
+    fields = {
+        # Specify whether this vif requires L3 setup
+        'l3_setup': obj_fields.BooleanField(),
+        # PCI info of the device
+        'pci_address': obj_fields.StringField(),
+        # Name of the driver the device was previously bound to; it makes
+        # the controller driver agnostic (virtio, sr-iov, etc.)
+        'dev_driver': obj_fields.StringField(),
+        'selflink': obj_fields.StringField(),
+        'resourceversion': obj_fields.StringField()
+    }
