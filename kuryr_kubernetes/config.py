@@ -153,6 +153,10 @@ k8s_opts = [
                 help=_("The comma-separated handlers that should be "
                        "registered for watching in the pipeline."),
                 default=['vif', 'lb', 'lbaasspec']),
+    cfg.StrOpt('multi_vif_drivers',
+               help=_("The drivers that provides additional VIFs for"
+                      "Kubernetes Pods."),
+               default='default'),
 ]
 
 neutron_defaults = [

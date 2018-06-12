@@ -31,9 +31,12 @@ class TestVIFHandler(test_base.TestCase):
         self._subnets = mock.sentinel.subnets
         self._security_groups = mock.sentinel.security_groups
         self._vif = mock.Mock()
+        self._additional_vif = mock.Mock()
         self._vif.active = True
         self._vif_serialized = mock.sentinel.vif_serialized
         self._vifs = {k_const.DEFAULT_IFNAME: self._vif}
+        self._additional_vifs = \
+            {k_const.ADDITIONAL_IFNAME_PREFIX+'1': self._additional_vif}
 
         self._pod_version = mock.sentinel.pod_version
         self._pod_link = mock.sentinel.pod_link
@@ -58,6 +61,7 @@ class TestVIFHandler(test_base.TestCase):
         self._get_security_groups = self._handler._drv_sg.get_security_groups
         self._set_vifs_driver = self._handler._drv_vif_pool.set_vif_driver
         self._request_vif = self._handler._drv_vif_pool.request_vif
+        self._request_vifs = self._handler._drv_vif_pool.request_vifs
         self._release_vif = self._handler._drv_vif_pool.release_vif
         self._activate_vif = self._handler._drv_vif_pool.activate_vif
         self._get_vifs = self._handler._get_vifs
@@ -66,6 +70,7 @@ class TestVIFHandler(test_base.TestCase):
         self._is_pending_node = self._handler._is_pending_node
 
         self._request_vif.return_value = self._vif
+        self._request_vifs.return_value = self._additional_vifs
         self._get_vifs.return_value = self._vifs
         self._is_host_network.return_value = False
         self._is_pending_node.return_value = True
@@ -179,6 +184,20 @@ class TestVIFHandler(test_base.TestCase):
         self._request_vif.assert_called_once_with(
             self._pod, self._project_id, self._subnets, self._security_groups)
         self._set_vifs.assert_called_once_with(self._pod, self._vifs)
+        self._activate_vif.assert_not_called()
+
+    def test_on_present_create_with_additional_vifs(self):
+        self._get_vifs.return_value = {}
+
+        h_vif.VIFHandler.on_present(self._handler, self._pod)
+
+        self._get_vifs.assert_called_once_with(self._pod)
+        self._request_vif.assert_called_once_with(
+            self._pod, self._project_id, self._subnets, self._security_groups)
+        self._request_vifs.assert_called_once_with(
+            self._pod, self._project_id, self._subnets, self._security_groups)
+        vifs= dict(self._vifs, **self._additional_vifs)
+        self._set_vifs.assert_called_once_with(self._pod, vifs)
         self._activate_vif.assert_not_called()
 
     def test_on_present_rollback(self):

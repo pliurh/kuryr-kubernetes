@@ -69,12 +69,14 @@ class VIFHandler(k8s_base.ResourceEventHandler):
             security_groups = self._drv_sg.get_security_groups(pod, project_id)
             subnets = self._drv_subnets.get_subnets(pod, project_id)
 
-            # NOTE(danil): There is currently no way to actually request
-            # multiple VIFs. However we're packing the main_vif 'eth0' in a
-            # dict here to facilitate future work in this area
             main_vif = self._drv_vif_pool.request_vif(
                 pod, project_id, subnets, security_groups)
             vifs[constants.DEFAULT_IFNAME] = main_vif
+
+            additional_vifs = self._drv_vif_pool.request_vifs(
+                pod, project_id, subnets, security_groups)
+            for i, vif in zip(range(len(additional_vifs)), additional_vifs):
+                vifs[constants.ADDITIONAL_IFNAME_PREFIX+str(i)] = vif
 
             try:
                 self._set_vifs(pod, vifs)

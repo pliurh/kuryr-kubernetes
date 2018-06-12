@@ -750,6 +750,15 @@ class MultiVIFPool(base.VIFPoolDriver):
 
     def set_vif_driver(self):
         self._vif_drvs = {}
+        self._additional_vif_drivers = \
+            oslo_cfg.CONF.kubernetes.multi_vif_drivers
+
+        for drivers in self._additional_vif_drivers:
+            drv_vif = base.PodVIFDriver.get_instance()
+            drv_pool = base.VIFPoolDriver.get_instance()
+            drv_pool.set_vif_driver(drv_vif)
+            self._vif_drvs[drivers] = drv_pool
+
         pools_vif_drivers = oslo_cfg.CONF.vif_pool.pools_vif_drivers
         if not pools_vif_drivers:
             pod_vif = oslo_cfg.CONF.kubernetes.pod_vif_driver
@@ -788,6 +797,14 @@ class MultiVIFPool(base.VIFPoolDriver):
             if str(vif_drv) == 'NoopVIFPool':
                 continue
             vif_drv.delete_network_pools(net_id)
+
+    def request_vifs(self, pod, project_id, subnets, security_groups,
+                     num_ports):
+        vifs = {}
+        for vif_type in self._additional_vif_drivers:
+            vifs.update(self._vif_drvs[vif_type].request_vif(
+                pod, project_id, subnets, security_groups))
+        return vifs
 
     def _get_pod_vif_type(self, pod):
         node_name = pod['spec']['nodeName']
