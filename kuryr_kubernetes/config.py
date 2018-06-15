@@ -165,6 +165,10 @@ k8s_opts = [
     cfg.PortOpt('controller_ha_elector_port',
                 help=_('Port on which leader-elector pod is listening to.'),
                 default=16401),
+    cfg.ListOpt('multi_vif_drivers',
+                help=_("The drivers that provides additional VIFs for"
+                       "Kubernetes Pods."),
+                default='noop'),
 ]
 
 neutron_defaults = [
