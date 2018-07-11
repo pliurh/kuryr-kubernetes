@@ -39,7 +39,7 @@ class NestedDpdkPodVIFDriver(nested_vif.NestedPodVIFDriver):
         # TODO(garyloug): provide an implementation
         raise NotImplementedError()
 
-    def release_vif(self, pod, vif):
+    def release_vif(self, pod, vif, project_id, security_groups):
         neutron = clients.get_neutron_client()
         nova = clients.get_nova_client()
 

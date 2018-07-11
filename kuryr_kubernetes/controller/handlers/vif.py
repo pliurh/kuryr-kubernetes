@@ -20,8 +20,10 @@ from oslo_serialization import jsonutils
 from kuryr_kubernetes import clients
 from kuryr_kubernetes import constants
 from kuryr_kubernetes.controller.drivers import base as drivers
+from kuryr_kubernetes.controller.drivers import nested_dpdk_vif
 from kuryr_kubernetes import exceptions as k_exc
 from kuryr_kubernetes.handlers import k8s_base
+from kuryr_kubernetes.objects import vif as k_vif
 
 LOG = logging.getLogger(__name__)
 
@@ -117,7 +119,10 @@ class VIFHandler(k8s_base.ResourceEventHandler):
 
     def _drv_for_vif(self, vif):
         # TODO(danil): a better polymorphism is required here
-        return self._drv_vif_pool
+        if isinstance(vif, k_vif.VIFDpdk):
+            return nested_dpdk_vif.NestedDpdkPodVIFDriver()
+        else:
+            return self._drv_vif_pool
 
     @staticmethod
     def _is_host_network(pod):

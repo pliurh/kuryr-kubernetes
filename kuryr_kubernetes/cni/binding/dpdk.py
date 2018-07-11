@@ -62,7 +62,7 @@ class DpdkDriver(health.HealthHandler):
         vif.pci_address = pci_addr
         dpdk_driver = CONF.nested_dpdk.dpdk_driver
         self._change_driver_binding(pci_addr, dpdk_driver)
-        self._set_vif(vif)
+        self._set_vif(vif, ifname)
 
     def disconnect(self, vif, ifname, netns):
         self._change_driver_binding(vif.pci_address, vif.dev_driver)
@@ -107,17 +107,17 @@ class DpdkDriver(health.HealthHandler):
                       uio_driver)
             raise err
 
-    def _set_vif(self, vif):
+    def _set_vif(self, vif, ifname):
         # TODO(ivc): extract annotation interactions
-        if vif is None:
-            LOG.debug("Removing VIF annotation: %r", vif)
-            annotation = None
-        else:
-            vif.obj_reset_changes(recursive=True)
-            LOG.debug("Setting DPDK VIF annotation: %r", vif)
-            annotation = jsonutils.dumps(vif.obj_to_primitive(),
-                                         sort_keys=True)
         k8s = clients.get_kubernetes_client()
+        pod = k8s.get(vif.selflink)
+        annotations = pod['metadata']['annotations']
+        vif_annotation = annotations[constants.K8S_ANNOTATION_VIF]
+        vifs_dict = jsonutils.loads(vif_annotation)
+        vif.obj_reset_changes(recursive=True)
+        LOG.debug("Setting DPDK VIF annotation: %r", vif)
+        vifs_dict[ifname] = vif.obj_to_primitive()
+        annotation = jsonutils.dumps(vifs_dict, sort_keys=True)
         k8s.annotate(vif.selflink,
                      {constants.K8S_ANNOTATION_VIF: annotation},
                      resource_version=None)

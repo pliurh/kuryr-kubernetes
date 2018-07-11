@@ -66,9 +66,15 @@ class NPWGMultiVIFDriver(base.MultiVIFDriver):
                                      ['openstack.org/kuryr-config'])
             subnet_id = config[constants.K8S_ANNOTATION_NPWG_CRD_SUBNET_ID]
             subnet = {subnet_id: default_subnet._get_subnet(subnet_id)}
+            vif_drv = None
             if constants.K8S_ANNOTATION_NPWG_CRD_DRIVER_TYPE not in config:
-                vif = self._drv_vif_pool.request_vif(
-                    pod, project_id, subnet, security_groups)
+                vif_drv = self._drv_vif_pool
+            else:
+                alias = config[constants.K8S_ANNOTATION_NPWG_CRD_DRIVER_TYPE]
+                vif_drv = base.PodVIFDriver.get_instance(
+                    driver_alias=alias)
+            vif = vif_drv.request_vif(pod, project_id, subnet, security_groups)
+
             if vif:
                 vifs.append(vif)
         return vifs
